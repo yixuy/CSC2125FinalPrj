@@ -8,3 +8,5 @@ The property of blockchain causes the arbitrage performance to be different from
 We will study the price expectation of each exchange based on their past transaction records on price fluctuations and transaction fee (gas fee) fluctuations.
 
 We will try to start with cryptocurrencies of medium market cap including Dogecoin, Shiba Inu…
+
+Google Doc link: https://docs.google.com/document/d/1MIFtHyvE4Qb7iO7dMlvubtsNCXxcCDtgrwsV9sn01Uk/edit
