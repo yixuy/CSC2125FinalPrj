@@ -11,3 +11,8 @@ We will try to start with cryptocurrencies of medium market cap including Dogeco
 
 Google Doc link: https://docs.google.com/document/d/1MIFtHyvE4Qb7iO7dMlvubtsNCXxcCDtgrwsV9sn01Uk/edit
 Google Sheets link: https://docs.google.com/spreadsheets/d/1vp_-G1hRQcD1IdCpPBNsdEQ9aKRx4G1DtvEghktitBY/edit#gid=0
+
+
+Pre Package install:
+pip install ccxt
+pip install pyxt

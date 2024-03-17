@@ -27,3 +27,24 @@ example: yyyy-mm-dd hh-mm : $$（价格单位: usd）
 -- 7.3.2 实现多线程监听价格 （需要了解api）
 -- 7.3.3 关联自己的账号和程序
 -- 7.3.4 完成交易部分的代码 （需要了解api）
+
+
+
+-- Iteration 2---
+1.
+Research on the average latency of transcation between two coins and bitcoin
+(Demo) Question why do we 
+(Demo) Transcation in dogecoin 
+
+2. 
+Research: 
+Factor to the transcation latency
+https://foundation.dogecoin.com/
+
+3. 
+Create the data.csv for each platform 
+
+4. 
+Research on Gas Fee 
+
+
