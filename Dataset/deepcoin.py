@@ -17,8 +17,8 @@ while time.time() < end:
     response = requests.get(url)
     trades = response.json()['data']
     print(trades)
-    res.append({'datetime': convert_timestamp(trades[0]['ts']), 'price': trades[0]['last'], 'exchange_symbol': exchange_symbol})
-print(res)
+    res.append({'datetime': convert_timestamp(trades[0]['ts']), 'price': trades[0]['last']})
+
 fieldnames = {'datetime', 'price'}
 filename = f'data/deep_coin_{exchange_symbol}_transaction.csv'
 
