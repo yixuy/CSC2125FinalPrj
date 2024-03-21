@@ -47,4 +47,21 @@ Create the data.csv for each platform
 4. 
 Research on Gas Fee 
 
+----- Tmr ---
+1. check whether the slide will be on next Monday
+2. Data 
+    main branch:
+    dogecoin + shiba inu
+
+3. Data visualization
+
+-- Iteration 3---
+
+3. The latency 
+- google 
+- average the time of the complete transcation
+- api call 
+4. 
+yizhou's paper 
+model for gas fee(optional for shiba inu)
 
