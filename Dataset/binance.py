@@ -2,7 +2,8 @@ import ccxt
 import csv
 import time
 
-exchange_symbol = 'DOGE/USD'
+# exchange_symbol = 'DOGE/USD'
+exchange_symbol = 'SHIB/USDT'
 exchange = ccxt.binance()
 
 now = int(time.time()) * 1000
@@ -12,7 +13,7 @@ res = []
 res += exchange.fetch_trades(exchange_symbol, since=since, limit=10000) # limit is 1000
 
 # Specify the CSV file name
-filename = f'data/binance.csv'
+filename = f'shiba_data/binance_shiba_usdt_transaction.csv'
 
 fieldnames = res[0].keys()
 fieldnames = {'timestamp', 'datetime', 'symbol', 'type', 'price',  'amount', 'cost' }
