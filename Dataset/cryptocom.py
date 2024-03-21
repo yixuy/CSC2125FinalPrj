@@ -2,7 +2,8 @@ import ccxt
 import csv
 import time
 
-exchange_symbol = "DOGEUSD-PERP"
+# exchange_symbol = "DOGEUSD-PERP"
+exchange_symbol = "SHIBUSD-PERP"
 exchange = ccxt.cryptocom()
 
 now = int(time.time()) * 1000
@@ -12,7 +13,7 @@ res = []
 res += exchange.fetch_trades(exchange_symbol, since=since, limit=10000) # limit is 500
 
 # Specify the CSV file name
-filename = f'data/cryptocom.csv'
+filename = f'shiba_data/cryptocom_shiba_usd_transaction.csv'
 
 fieldnames = res[0].keys()
 fieldnames = {'timestamp', 'datetime', 'symbol', 'type', 'price',  'amount', 'cost' }
