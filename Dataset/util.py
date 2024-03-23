@@ -20,3 +20,4 @@ def exchange_save_csv(platform_name, exchange_symbol):
         dict_writer = csv.DictWriter(output_file, field_names)
         dict_writer.writeheader()
         dict_writer.writerows(filtered_data)
+        
