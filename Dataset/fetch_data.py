@@ -90,13 +90,20 @@ market_list = [
     }
 ]
 
-def get_market_data(exchange, exchange_symbol: str, save_file: str, time_since: int):
+def get_market_data(exchange, exchange_symbol: str, save_file: str, time_since: int, time_until: int):
 
     res = []
     if time_since == None:
         res += exchange.fetch_trades(exchange_symbol, limit=10000)
     else:
-        res += exchange.fetch_trades(exchange_symbol, since = time_since, limit=10000)
+        from_ts = time_since
+        while True:
+            trades =  exchange.fetch_trades(exchange_symbol, since = from_ts, limit=10000)
+            # print(trades)
+            res += trades
+            if trades[-1]['timestamp'] == from_ts or trades[-1]['timestamp'] >= time_until:
+                break
+            from_ts = trades[-1]['timestamp']
 
     # Specify the CSV file name
     filename = save_file
@@ -114,7 +121,7 @@ def get_market_data(exchange, exchange_symbol: str, save_file: str, time_since: 
 if __name__ == "__main__":
 
     default_time_until = int(time.time()) * 1000
-    default_time_since = default_time_until - 3600 * 1000 # 1hr data by default
+    default_time_since = default_time_until - 3600 * 1000 * 5 # 5hr data by default
 
     for market in market_list:
         time_since = None if market["name"] == "mexc" else default_time_since
@@ -122,8 +129,8 @@ if __name__ == "__main__":
         print(f"Fetching data for {market['name']}...")
         # Get Doge Data
         save_file = f"./doge_data/{market['name']}_doge_transaction.csv"
-        get_market_data(market["exchange"], market["doge_symbol"], save_file, time_since)
+        get_market_data(market["exchange"], market["doge_symbol"], save_file, time_since, time_until)
         # Get Shib Data
         save_file = f"./shib_data/{market['name']}_shib_transaction.csv"
-        get_market_data(market["exchange"], market["shib_symbol"], save_file, time_since)
+        get_market_data(market["exchange"], market["shib_symbol"], save_file, time_since, time_until)
         
