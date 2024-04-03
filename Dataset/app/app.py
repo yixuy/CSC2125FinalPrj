@@ -3,6 +3,14 @@ Write multithreaded listener for price
 '''
 import time
 
+
+def get_variance(exchange_name):
+    '''
+    Return variance for exchange exchange_name
+    '''
+    return 0.005
+    
+
 if __name__ == "__main__":
 
     virtual_beginning_time = 0 # set to a timestamp
