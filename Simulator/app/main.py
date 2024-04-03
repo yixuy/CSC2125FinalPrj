@@ -1,3 +1,11 @@
+'''
+Write main function for market simulator
+
+We want server to have one functionality
+When server received request (timestamp, cointype, exchange), 
+respond with (coin_price)
+'''
+
 from app import marketsim
 from flask import jsonify, request
 import os
@@ -29,11 +37,11 @@ def main():
 def getPrice():
     if 'exchange' not in request.form:
         return "Need an exchange market"
-    if 'cryptocurrency' not in request.form:
-        return "Need a cryptocurrency"
+    if 'cointype' not in request.form:
+        return "Need a cointype"
     exchange = request.form.get('exchange')
-    cryptocurrency = request.form.get('cryptocurrency')
-    csv_file_path = os.path.join(current_dir, r'static\{}_data\{}_{}_transaction.csv'.format(cryptocurrency, exchange, cryptocurrency))
+    cointype = request.form.get('cointype')
+    csv_file_path = os.path.join(current_dir, r'static\{}_data\{}_{}_transaction.csv'.format(cointype, exchange, cointype))
     print("csv path: ", csv_file_path)
     
     real_current_timestamp = round(time.time() * 1000)
@@ -50,8 +58,8 @@ def getPrice():
         for row in csv_reader:
             timestamp = int(row['timestamp'])
             if timestamp >= market_target_timestamp:
-                price = float(row['price'])
-                print("Price at timestamp {}: {}".format(market_target_timestamp, price))
+                coin_price = float(row['price'])
+                print("Price at timestamp {}: {}".format(market_target_timestamp, coin_price))
                 break
         else:
             print("Timestamp {} not found in the CSV file.".format(market_target_timestamp))
@@ -63,5 +71,5 @@ def getPrice():
     time_to_retrieve_price = end_time_micro - start_time_micro
     print("time to retrieve price:", time_to_retrieve_price, "microseconds")
 
-    response = jsonify(success='True', price=price)
+    response = jsonify(success='True', coin_price=coin_price)
     return response
