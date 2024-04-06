@@ -11,11 +11,17 @@ from flask import jsonify, request
 import os
 import csv
 import time
+import sys
 
 current_dir = os.path.dirname(os.path.abspath(__file__))
 
 def getMarketStartTime():
-    lbank_shib_path = os.path.join(current_dir, r'static\shib_data\lbank_shib_transaction.csv')
+    if sys.platform.startswith('win'):
+        # For Windows
+        lbank_shib_path = os.path.join(current_dir, r'static\shib_data\lbank_shib_transaction.csv')
+    else:
+        lbank_shib_path = os.path.join(current_dir, r'static/shib_data/lbank_shib_transaction.csv')
+    
     with open(lbank_shib_path, "r") as csv_file:
         csv_reader = csv.DictReader(csv_file)
         next(csv_reader)
@@ -41,7 +47,21 @@ def getPrice():
         return "Need a cointype"
     exchange = request.form.get('exchange')
     cointype = request.form.get('cointype')
-    csv_file_path = os.path.join(current_dir, r'static\{}_data\{}_{}_transaction.csv'.format(cointype, exchange, cointype))
+    
+    
+    if sys.platform.startswith('win'):
+        # For Windows
+        print("win")
+        csv_file_path = os.path.join(current_dir, r'static\{}_data\{}_{}_transaction.csv'.format(cointype, exchange, cointype))
+        os.path.join(current_dir, r'static\{}_data\{}_{}_transaction.csv'.format(cointype, exchange, cointype))
+    else:
+        # For macOS
+        print("mos")
+        csv_file_path = os.path.join(current_dir, r'static/{}_data/{}_{}_transaction.csv'.format(cointype, exchange, cointype))
+        os.path.join(current_dir, r'static/{}_data/{}_{}_transaction.csv'.format(cointype, exchange, cointype))
+
+    
+    
     print("csv path: ", csv_file_path)
     
     real_current_timestamp = round(time.time() * 1000)

@@ -14,5 +14,9 @@ Google Sheets link: https://docs.google.com/spreadsheets/d/1vp_-G1hRQcD1IdCpPBNs
 
 
 Pre Package install:
-pip install ccxt
-pip install pyxt
+```pip install ccxt```
+```pip install pyxt```
+```pip install Falsk```
+
+Run the simulator:
+```python Simulator/run.py```
