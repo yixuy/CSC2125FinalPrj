@@ -51,18 +51,12 @@ def getPrice():
     
     if sys.platform.startswith('win'):
         # For Windows
-        print("win")
         csv_file_path = os.path.join(current_dir, r'static\{}_data\{}_{}_transaction.csv'.format(cointype, exchange, cointype))
         os.path.join(current_dir, r'static\{}_data\{}_{}_transaction.csv'.format(cointype, exchange, cointype))
     else:
         # For macOS
-        print("mos")
         csv_file_path = os.path.join(current_dir, r'static/{}_data/{}_{}_transaction.csv'.format(cointype, exchange, cointype))
         os.path.join(current_dir, r'static/{}_data/{}_{}_transaction.csv'.format(cointype, exchange, cointype))
-
-    
-    
-    print("csv path: ", csv_file_path)
     
     real_current_timestamp = round(time.time() * 1000)
     print("real current timestamp: ", real_current_timestamp)
