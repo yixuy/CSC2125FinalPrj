@@ -20,7 +20,7 @@ def getMarketStartTime():
         # For Windows
         lbank_shib_path = os.path.join(current_dir, r'static\shib_data\lbank_shib_transaction.csv')
     else:
-       lbank_shib_path = os.path.join(current_dir, r'static/shib_data/lbank_shib_transaction.csv')
+        lbank_shib_path = os.path.join(current_dir, r'static/shib_data/lbank_shib_transaction.csv')
     
     with open(lbank_shib_path, "r") as csv_file:
         csv_reader = csv.DictReader(csv_file)
