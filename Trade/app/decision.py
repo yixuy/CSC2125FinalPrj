@@ -2,10 +2,31 @@ import requests
 import threading
 import time
 
-real_time_exchange_doge = {'binance': 0, 'gemini': 0, 'kraken': 0, 'lbank': 0}
-real_time_exchange_shib = {'binance': 0, 'gemini': 0, 'kraken': 0, 'lbank': 0}
-future_exchange_doge = {'binance': 0, 'gemini': 0, 'kraken': 0, 'lbank': 0}
-future_exchange_shib = {'binance': 0, 'gemini': 0, 'kraken': 0, 'lbank': 0}
+doge_fund_lock = threading.Lock()
+shib_fund_lock = threading.Lock()
+stop_event = threading.Event()
+
+fund_doge = 0
+fund_shib = 0
+
+exchange_name_list = ['mexc', 'okx', 'kraken', 'gateio', 'binance', 'bingx', 'cryptocom', 'gemini', 'lbank', 'bitfinex', 'kucoin', 'htx', 'bitget']
+
+real_time_doge_asks = {'mexc': [], 'okx': [], 'kraken': [], 'gateio': [], 'binance': [], 'bingx': [], 'cryptocom': [], 
+                           'gemini': [], 'lbank': [], 'bitfinex': [], 'kucoin': [], 'htx': [], 'bitget': []}
+real_time_doge_bids = {'mexc': [], 'okx': [], 'kraken': [], 'gateio': [], 'binance': [], 'bingx': [], 'cryptocom': [], 
+                           'gemini': [], 'lbank': [], 'bitfinex': [], 'kucoin': [], 'htx': [], 'bitget': []}
+real_time_shib_asks = {'mexc': [], 'okx': [], 'kraken': [], 'gateio': [], 'binance': [], 'bingx': [], 'cryptocom': [], 
+                           'gemini': [], 'lbank': [], 'bitfinex': [], 'kucoin': [], 'htx': [], 'bitget': []}
+real_time_shib_bids = {'mexc': [], 'okx': [], 'kraken': [], 'gateio': [], 'binance': [], 'bingx': [], 'cryptocom': [], 
+                           'gemini': [], 'lbank': [], 'bitfinex': [], 'kucoin': [], 'htx': [], 'bitget': []}
+future_doge_sell_prices = {'mexc': 0, 'okx': 0, 'kraken': 0, 'gateio': 0, 'binance': 0, 'bingx': 0, 'cryptocom': 0, 
+                           'gemini': 0, 'lbank': 0, 'bitfinex': 0, 'kucoin': 0, 'htx': 0, 'bitget': 0}
+future_shib_sell_prices = {'mexc': 0, 'okx': 0, 'kraken': 0, 'gateio': 0, 'binance': 0, 'bingx': 0, 'cryptocom': 0, 
+                           'gemini': 0, 'lbank': 0, 'bitfinex': 0, 'kucoin': 0, 'htx': 0, 'bitget': 0}
+future_doge_bids = {'mexc': [], 'okx': [], 'kraken': [], 'gateio': [], 'binance': [], 'bingx': [], 'cryptocom': [], 
+                           'gemini': [], 'lbank': [], 'bitfinex': [], 'kucoin': [], 'htx': [], 'bitget': []}
+future_shib_bids = {'mexc': [], 'okx': [], 'kraken': [], 'gateio': [], 'binance': [], 'bingx': [], 'cryptocom': [], 
+                           'gemini': [], 'lbank': [], 'bitfinex': [], 'kucoin': [], 'htx': [], 'bitget': []}
 
 
 def update_exchange(cointype, exchange, frequency):
@@ -14,55 +35,161 @@ def update_exchange(cointype, exchange, frequency):
     based on the exchange, update the new one
 
     """
-    global real_time_exchange_doge,future_exchange_doge
+    global real_time_doge_asks, real_time_doge_bids, real_time_shib_asks, real_time_shib_bids
+    global future_doge_sell_prices, future_shib_sell_prices, future_doge_bids, future_shib_bids
 
-    data= {
+    if cointype == 'doge':  
+        future_timestamp = 2400000
+    elif cointype == 'shib':
+        future_timestamp = 840000
+    else:
+        return
+    
+    data_current = {
         'exchange': exchange,
         'cointype': cointype
     }
-    while True:
+    data_future = {
+        'exchange': exchange,
+        'cointype': cointype,
+        'timestamp': future_timestamp
+    }
+
+    while not stop_event.is_set():
         try:
-            response = requests.post("http://127.0.0.1:5000/getPrice", data=data)
-            res_json = response.json()
+            response_current = requests.post("http://127.0.0.1:5000/getPrice", data=data_current)
+            res_current_json = response_current.json()
+        except Exception as e:
+            print(f"An error occurred: {e}")
+        try:
+            response_future = requests.post("http://127.0.0.1:5000/getPrice", data=data_future)
+            res_future_json = response_future.json()
         except Exception as e:
             print(f"An error occurred: {e}")
         
+        if res_future_json['message'] == 'timestamp too large':
+            print("data_future reaches the end of market data, stopping....")
+            stop_event.set()
+            break
+
         if cointype == 'doge':
-            real_time_exchange_doge[exchange] = res_json['coin_price']
-            # todo: future_exchange_doge[exchange] = 
+            real_time_doge_asks[exchange] = res_current_json['order_book']['asks']
+            real_time_doge_bids[exchange] = res_current_json['order_book']['bids']
+            # todo: calculate future_doge_sell_prices[exchange]
+            # max_bid_price = res_current_json['order_book']['bids'][0][0]
+            # future_doge_sell_prices[exchange] = estimationFunc(max_bid_price, arg1, arg2, ...)
+            future_doge_bids[exchange] = res_future_json['order_book']['bids']
         elif cointype == 'shib':
-            real_time_exchange_shib[exchange] = res_json['coin_price']
-            # todo: future_exchange_shib[exchange] = 
+            real_time_shib_asks[exchange] = res_current_json['order_book']['asks']
+            real_time_shib_bids[exchange] = res_current_json['order_book']['bids']
+            # todo: future_shib_sell_prices[exchange] = 
+            future_shib_bids[exchange] = res_future_json['order_book']['bids']
 
         time.sleep(frequency)
 
 
 def buy_sell():
-    while True:
-        print("Real-time exchange price (DOGE):", real_time_exchange_doge)
-        print("Real-time exchange price (SHIB):", real_time_exchange_shib)
-        print("Future exchange price (DOGE):", future_exchange_doge)
-        print("Future exchange price (SHIB):", future_exchange_shib)
+    time.sleep(2)
+    global real_time_doge_asks, real_time_shib_asks
+    global fund_doge, fund_shib
+    
+    real_time_doge_low_asks = {}
+    real_time_shib_low_asks = {}
+
+    print("Initial DOGE fund:", fund_doge)
+    print("Initial SHIB fund:", fund_shib)
+
+    while not stop_event.is_set():
+        buy_exchange_doge = None
+        buy_price_doge = float('inf')
+        # print("real_time_doge_asks: ", real_time_doge_asks)
+        for exchange, asks in real_time_doge_asks.items():
+            min_ask_price = min(asks, key=lambda x: x[0])[0]
+            real_time_doge_low_asks[exchange] = min_ask_price ####
+            if min_ask_price < buy_price_doge:
+                buy_price_doge = min_ask_price
+                buy_exchange_doge = exchange
+        real_time_doge_buys = real_time_doge_asks[buy_exchange_doge]
         
-        buy_exchange_doge, buy_price_doge = min(real_time_exchange_doge.items(), key=lambda x: x[1])
-        sell_exchange_doge, sell_price_doge = max(future_exchange_doge.items(), key=lambda x: x[1])
-        buy_exchange_shib, buy_price_shib = min(real_time_exchange_shib.items(), key=lambda x: x[1])
-        sell_exchange_shib, sell_price_shib = max(future_exchange_shib.items(), key=lambda x: x[1])
-        if sell_price_doge > buy_price_doge:
-            print(f"Buy from {buy_exchange_doge} at ${buy_price_doge} and sell to {sell_exchange_doge}, expect at price {sell_price_doge} ")
-            # record
-        elif sell_price_shib > buy_price_shib:
-            print(f"Buy from {buy_exchange_shib} at ${buy_price_shib} and sell to {sell_exchange_shib}, expect at price {sell_price_shib} ")
-            # record
+
+        buy_exchange_shib = None
+        buy_price_shib = float('inf')
+        for exchange, asks in real_time_shib_asks.items():
+            min_ask_price = min(asks, key=lambda x: x[0])[0]
+            real_time_shib_low_asks[exchange] = min_ask_price ####
+            if min_ask_price < buy_price_shib:
+                buy_price_shib = min_ask_price
+                buy_exchange_shib = exchange
+        real_time_shib_buys = real_time_shib_asks[buy_exchange_doge]
+
+        sell_exchange_doge, expect_sell_price_doge = max(future_doge_sell_prices.items(), key=lambda x: x[1])
+        sell_exchange_shib, expect_sell_price_shib = max(future_shib_sell_prices.items(), key=lambda x: x[1])
+        future_doge_sells = future_doge_bids[sell_exchange_doge]
+        future_shib_sells = future_shib_bids[sell_exchange_shib]
+
+        print("Real-time buy prices (DOGE):", real_time_doge_low_asks)
+        print("Future expected sell prices (DOGE):", future_doge_sell_prices)
+        print("Real-time buy prices (SHIB):", real_time_shib_low_asks)
+        print("Future expected sell prices (SHIB):", future_shib_sell_prices)
+        
+        if expect_sell_price_doge > buy_price_doge:
+            print(f"Buying DOGE from {buy_exchange_doge} at price starting of ${buy_price_doge} and selling to {sell_exchange_doge},")
+            print(f"Expecting at sell price of {expect_sell_price_doge} ")
+            bought_amount = 0
+            with doge_fund_lock:
+                for ask in real_time_doge_buys[:10]:
+                    if ask[0] > expect_sell_price_doge:
+                        break
+                    if ask[0] * ask[1] > fund_doge:
+                        bought_amount += fund_doge / ask[0]
+                        fund_doge -= ask[0] * bought_amount
+                        break
+                    bought_amount += ask[1]
+                    fund_doge -= ask[0] * ask[1]
+                for bid in future_doge_sells:
+                    if bid[1] > bought_amount:
+                        fund_doge += bid[0] * bought_amount
+                        bought_amount = 0
+                        break
+                    fund_doge += bid[0] * bid[1]
+                    bought_amount -= bid[1]
+                    
+        elif expect_sell_price_shib > buy_price_shib:
+            print(f"Buying SHIB from {buy_exchange_shib} at price strating of ${buy_price_shib} and selling to {sell_exchange_shib},")
+            print(f"Expecting at sell price of {expect_sell_price_shib} ")
+            bought_amount = 0
+            with shib_fund_lock:
+                for ask in real_time_shib_buys[:10]:
+                    if ask[0] > expect_sell_price_shib:
+                        break
+                    if ask[0] * ask[1] > fund_shib:
+                        bought_amount += fund_shib / ask[0]
+                        fund_shib -= ask[0] * bought_amount
+                        break
+                    bought_amount += ask[1]
+                    fund_shib -= ask[0] * ask[1]
+                for bid in future_shib_sells:
+                    if bid[1] > bought_amount:
+                        fund_shib += bid[0] * bought_amount
+                        bought_amount = 0
+                        break
+                    fund_shib += bid[0] * bid[1]
+                    bought_amount -= bid[1]
         else:
             print("No arbitrage opportunity available.")
+        
+        print("Remaining DOGE fund:", fund_doge)
+        print("Remaining SHIB fund:", fund_shib)
         time.sleep(1)
 
 
-def simulation():
-    initial_fund = 10000
+def simulation(initial_fund):
+    global fund_doge, fund_shib
+    fund_doge = float(initial_fund / 2)
+    fund_shib = float(initial_fund / 2)
+
     exchange_threads=[]
-    for exchange in ['binance', 'gemini', 'kraken', 'lbank']:
+    for exchange in exchange_name_list:
         t1 = threading.Thread(target=update_exchange, args=('doge', exchange, 1))
         t2 = threading.Thread(target=update_exchange, args=('shib', exchange, 1))
         t1.start()
@@ -76,17 +203,10 @@ def simulation():
     for thread in exchange_threads:
         thread.join()
     buy_sell_thread.join()
-    
-    # while True:
-    #     buy_exchange,sell_exchange,buy_price,sell_price = buy_sell()
-    #     #update purchase and balance
-    #     with open('example.txt', 'a') as file:
-    #         file.write(f"Buy from {buy_exchange} at ${buy_price} and sell to {sell_exchange} ")
-    #     time.sleep(frequency) # need to update the frequency
 
 
 if __name__ == "__main__":
-    simulation()
+    simulation(20000)
     
 
 
