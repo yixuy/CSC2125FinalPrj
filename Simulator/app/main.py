@@ -43,23 +43,6 @@ def getMarket():
     return market
 
 def getMarketStartTime(market):
-    # if sys.platform.startswith('win'):
-    #     # For Windows
-    #     lbank_shib_path = os.path.join(current_dir, r'static\trades\shib_data\lbank_shib_transaction.csv')
-    # else:
-    #     lbank_shib_path = os.path.join(current_dir, r'static/trades/shib_data/lbank_shib_transaction.csv')
-    
-    # with open(lbank_shib_path, "r") as csv_file:
-    #     csv_reader = csv.DictReader(csv_file)
-    #     next(csv_reader)
-    #     for row in csv_reader:
-    #         timestamp = int(row['timestamp'])
-    #         if timestamp > 0:
-    #             return timestamp
-
-    # with open(f'./static/temp_orders/shib_data/bitget_shib_orderbooks.pkl', 'rb') as f:
-    #     order_book = pickle.load(f)
-    # return order_book['timestamp']
     return market['shib']['bitget'][0]['timestamp']
 
 
@@ -82,16 +65,6 @@ def getPrice():
     exchange = request.form.get('exchange')
     cointype = request.form.get('cointype')
     
-    
-    # if sys.platform.startswith('win'):
-    #     # For Windows
-    #     csv_file_path = os.path.join(current_dir, r'static\trades\{}_data\{}_{}_transaction.csv'.format(cointype, exchange, cointype))
-    #     os.path.join(current_dir, r'static\trades\{}_data\{}_{}_transaction.csv'.format(cointype, exchange, cointype))
-    # else:
-    #     # For macOS
-    #     csv_file_path = os.path.join(current_dir, r'static/trades/{}_data/{}_{}_transaction.csv'.format(cointype, exchange, cointype))
-    #     os.path.join(current_dir, r'static/trades/{}_data/{}_{}_transaction.csv'.format(cointype, exchange, cointype))
-    
     real_current_timestamp = round(time.time() * 1000)
     print("real current timestamp: ", real_current_timestamp)
     elapsed_time = real_current_timestamp - real_start_timestamp
@@ -103,19 +76,7 @@ def getPrice():
         market_target_timestamp = int(request.form.get('timestamp')) + market_current_time
         print("market current timestamp: {}, market target timestamp: {}".format(market_current_time, market_target_timestamp))
     
-    # start_time = time.time() * 1000
     start_time_micro = time.time_ns() // 1000
-
-    # with open(csv_file_path, "r") as csv_file:
-    #     csv_reader = csv.DictReader(csv_file)
-    #     for row in csv_reader:
-    #         timestamp = int(row['timestamp'])
-    #         if timestamp >= market_target_timestamp:
-    #             coin_price = float(row['price'])
-    #             print("Price at timestamp {}: {}".format(market_target_timestamp, coin_price))
-    #             break
-    #     else:
-    #         print("Timestamp {} not found in the CSV file.".format(market_target_timestamp))
 
     order_books = market[cointype][exchange]
     res_order_book = {}
@@ -135,10 +96,6 @@ def getPrice():
             break
         res_order_book = order_book
     
-    # else:
-    #     print("Timestamp {} not found in the order book".format(market_target_timestamp))
-    
-    # end_time = time.time() * 1000
     end_time_micro = time.time_ns() // 1000
 
     # Calculate the elapsed time
