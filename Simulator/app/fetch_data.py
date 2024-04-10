@@ -125,7 +125,7 @@ def get_market_data(exchange, exchange_symbol: str, save_file: str, time_since: 
 
 def get_market_data_ohlcv(exchange, exchange_symbol: str, save_file: str, time_since: int):
     
-    res = exchange.fetch_ohlcv(exchange_symbol, '1m', since=time_since, limit=1500)
+    res = exchange.fetch_ohlcv(exchange_symbol, '1m', since=time_since, limit=720)
 
     filename = save_file
     header = ['date', 'open', 'high', 'low', 'close', 'volume']
@@ -157,7 +157,7 @@ def get_order_books(exchange, exchange_symbol, limit, save_file: str):
 if __name__ == "__main__":
 
     # time_now = int(time.time()) * 1000
-    # time_since = time_now - 3600 * 1000 * 24 # 24 hr data by default
+    # time_since = time_now - 3600 * 1000 * 42 
 
     # for market in market_list:
     #     print(f"Fetching data for {market['name']}...")
