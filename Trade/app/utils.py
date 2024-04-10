@@ -108,38 +108,44 @@ def get_estimate_ratio(latency: float, sigma: float, confidence_level:int = 99, 
 
 
 def get_volatility(csv_file):
+    # key1 = 'timestamp'
+    # key2 = 'price'
+    key1 = 'date'
+    key2 = 'open'
 
     # Read the data from the CSV file into a DataFrame
     df = pd.read_csv(csv_file)
 
-    adj_price = []
-    l = len(df['timestamp'])
-    beg = (df['timestamp'][0] // 1000 + 1) * 1000
-    end = (df['timestamp'][l - 1] // 1000) * 1000
+    df[key1] = pd.to_datetime(df[key1], unit='ms')
 
-    i = 0
-    for t in range(beg, end + 1, 1000):
-        while df['timestamp'][i] < t:
-            i += 1
-        if df['timestamp'][i] == t:
-            adj_price.append(df['price'][i])
-        else:
-            interv = df['timestamp'][i] - df['timestamp'][i - 1]
-            adj_price.append(df['price'][i - 1] * (t - df['timestamp'][i - 1]) / interv + df['price'][i] * (df['timestamp'][i] - t)/ interv)
-    
-    adj_price = np.array(adj_price)
+    # Calculate logarithmic returns
+    df['returns'] = np.log(df[key2] / df[key2].shift(1))
 
-    returns = adj_price[1:] / adj_price[:-1] - 1
+    # Calculate the time differences in milliseconds
+    df['time_diff_ms'] = df[key1].diff().dt.total_seconds() * 1000  # Convert seconds to milliseconds
 
-    volatility = np.std(returns)
+    # Convert time differences to seconds
+    df['time_diff_sec'] = df['time_diff_ms'] / 1000  # Convert milliseconds to seconds
 
-    return volatility
+    # Calculate the squared returns weighted by time difference
+    df['weighted_squared_returns'] = df['returns'] ** 2 * df['time_diff_sec']
+
+    # Calculate the sum of weighted squared returns
+    sum_weighted_squared_returns = df['weighted_squared_returns'].sum()
+
+    # Calculate the total time difference in seconds
+    total_time_diff_sec = df['time_diff_sec'].sum()
+
+    # Calculate the volatility per second
+    volatility_per_sec = np.sqrt(sum_weighted_squared_returns / total_time_diff_sec)
+
+    print("Volatility per second:", volatility_per_sec)
 
 
 def get_doge_volatilities():
     d = {}
     for market in market_list:
-        d[market['name']] = get_volatility(f"../../Dataset/doge_data/{market['name']}_doge_transaction.csv")
+        d[market['name']] = get_volatility(f"../../Dataset/ohlcvs/doge_data/{market['name']}_doge_transaction.csv")
     
     return d
 
@@ -147,12 +153,12 @@ def get_doge_volatilities():
 def get_shib_volatilities():
     d = {}
     for market in market_list:
-        d[market['name']] = get_volatility(f"../../Dataset/shib_data/{market['name']}_shib_transaction.csv")
+        d[market['name']] = get_volatility(f"../../Dataset/ohlcvs/shib_data/{market['name']}_shib_transaction.csv")
     
     return d
 
 
 if __name__ == "__main__":
-    print(get_estimate_ratio(latency = 2400, sigma = 0.0003022265544126979, confidence_level = 80))
+    print(get_estimate_ratio(latency = 2400, sigma = 0.0014224225155174714, confidence_level = 90))
     # for market in market_list:
-    #     get_volatility(f"../../Dataset/doge_data/{market['name']}_doge_transaction.csv")
+    #     get_volatility(f"../../Dataset/ohlcvs/doge_data/{market['name']}_doge_transaction.csv")
