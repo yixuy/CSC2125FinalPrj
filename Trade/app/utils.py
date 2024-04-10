@@ -139,7 +139,7 @@ def get_volatility(csv_file):
     # Calculate the volatility per second
     volatility_per_sec = np.sqrt(sum_weighted_squared_returns / total_time_diff_sec)
 
-    print("Volatility per second:", volatility_per_sec)
+    return volatility_per_sec
 
 
 def get_doge_volatilities():

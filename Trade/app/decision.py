@@ -1,6 +1,7 @@
 import requests
 import threading
 import time
+import utils
 
 doge_fund_lock = threading.Lock()
 shib_fund_lock = threading.Lock()
@@ -28,6 +29,8 @@ future_doge_bids = {'mexc': [], 'okx': [], 'kraken': [], 'gateio': [], 'binance'
 future_shib_bids = {'mexc': [], 'okx': [], 'kraken': [], 'gateio': [], 'binance': [], 'bingx': [], 'cryptocom': [], 
                            'gemini': [], 'lbank': [], 'bitfinex': [], 'kucoin': [], 'htx': [], 'bitget': []}
 
+doge_volatilities = {}
+shib_volatilities = {}
 
 def update_exchange(cointype, exchange, frequency):
     """
@@ -122,8 +125,10 @@ def buy_sell():
                 buy_exchange_shib = exchange
         real_time_shib_buys = real_time_shib_asks[buy_exchange_doge]
 
-        sell_exchange_doge, expect_sell_price_doge = max(future_doge_sell_prices.items(), key=lambda x: x[1])
-        sell_exchange_shib, expect_sell_price_shib = max(future_shib_sell_prices.items(), key=lambda x: x[1])
+        sell_exchange_doge = max(future_doge_sell_prices.items(), key=lambda x: x[1])
+        expect_sell_price_doge = sell_exchange_doge * utils.get_estimate_ratio(latency = 2400, sigma = doge_volatilities[buy_exchange_doge])
+        sell_exchange_shib = max(future_shib_sell_prices.items(), key=lambda x: x[1])
+        expect_sell_price_shib = sell_exchange_shib * utils.get_estimate_ratio(latency = 2400, sigma = shib_volatilities[buy_exchange_doge])
         future_doge_sells = future_doge_bids[sell_exchange_doge]
         future_shib_sells = future_shib_bids[sell_exchange_shib]
 
@@ -206,6 +211,9 @@ def simulation(initial_fund):
 
 
 if __name__ == "__main__":
+    # Prepare volatilities
+    doge_volatilities = utils.get_doge_volatilities()
+    shib_volatilities = utils.get_shib_volatilities()
     simulation(20000)
     
 
