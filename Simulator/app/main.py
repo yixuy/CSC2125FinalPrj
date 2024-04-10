@@ -2,8 +2,8 @@
 Write main function for market simulator
 
 We want server to have one functionality
-When server received request (timestamp, cointype, exchange), 
-respond with (coin_price)
+When server received request (cointype, exchange, timestamp), 
+respond with (order_book)
 '''
 
 from app import marketsim
@@ -12,25 +12,42 @@ import os
 import csv
 import time
 import sys
+import pickle
 
 current_dir = os.path.dirname(os.path.abspath(__file__))
 
-def getMarketStartTime():
-    if sys.platform.startswith('win'):
-        # For Windows
-        lbank_shib_path = os.path.join(current_dir, r'static\trades\shib_data\lbank_shib_transaction.csv')
-    else:
-        lbank_shib_path = os.path.join(current_dir, r'static/trades/shib_data/lbank_shib_transaction.csv')
-    
-    with open(lbank_shib_path, "r") as csv_file:
-        csv_reader = csv.DictReader(csv_file)
-        next(csv_reader)
-        for row in csv_reader:
-            timestamp = int(row['timestamp'])
-            if timestamp > 0:
-                return timestamp
+# exchange_name_list = ["mexc", "okx", "kraken", "gateio", "binance", "bingx", "bitstamp", "cryptocom", "gemini", "lbank", "bitfinex", "kucoin", "htx", "bitget"]
+exchange_name_list = ["mexc", "okx", "kraken", "gateio", "binance", "bingx", "cryptocom", "gemini", "lbank", "bitfinex", "kucoin", "htx", "bitget"]
 
-market_start_timestamp = getMarketStartTime()
+def getMarket():
+    market = {}
+    for cointype in ["doge", "shib"]:
+        coin_market = {}
+        for exchange in exchange_name_list:
+            if sys.platform.startswith('win'):
+                # For Windows
+                pickle_file_path = os.path.join(current_dir, r"static\orders\{}_data\{}_{}_orderbooks.pkl".format(cointype, exchange, cointype))
+            else:
+                pickle_file_path = os.path.join(current_dir, r"static/orders/{}_data/{}_{}_orderbooks.pkl".format(cointype, exchange, cointype))
+            print(f"retrieving {exchange} {cointype} data into memory...")
+            order_books = []
+            with open(pickle_file_path, "rb") as f:
+                try:
+                    while True:
+                        order_book = pickle.load(f)
+                        order_books.append(order_book)
+                except EOFError:
+                    pass  # Reached end of file
+            coin_market[exchange] = order_books
+        market[cointype] = coin_market
+    return market
+
+def getMarketStartTime(market):
+    return market['shib']['bitget'][0]['timestamp']
+
+
+market = getMarket()
+market_start_timestamp = getMarketStartTime(market)
 print("market start timestamp: ", market_start_timestamp)
 real_start_timestamp = round(time.time() * 1000)
 print("real start timestamp: ", real_start_timestamp)
@@ -48,16 +65,6 @@ def getPrice():
     exchange = request.form.get('exchange')
     cointype = request.form.get('cointype')
     
-    
-    if sys.platform.startswith('win'):
-        # For Windows
-        csv_file_path = os.path.join(current_dir, r'static\trades\{}_data\{}_{}_transaction.csv'.format(cointype, exchange, cointype))
-        os.path.join(current_dir, r'static\trades\{}_data\{}_{}_transaction.csv'.format(cointype, exchange, cointype))
-    else:
-        # For macOS
-        csv_file_path = os.path.join(current_dir, r'static/trades/{}_data/{}_{}_transaction.csv'.format(cointype, exchange, cointype))
-        os.path.join(current_dir, r'static/trades/{}_data/{}_{}_transaction.csv'.format(cointype, exchange, cointype))
-    
     real_current_timestamp = round(time.time() * 1000)
     print("real current timestamp: ", real_current_timestamp)
     elapsed_time = real_current_timestamp - real_start_timestamp
@@ -69,26 +76,38 @@ def getPrice():
         market_target_timestamp = int(request.form.get('timestamp')) + market_current_time
         print("market current timestamp: {}, market target timestamp: {}".format(market_current_time, market_target_timestamp))
     
-    # start_time = time.time() * 1000
     start_time_micro = time.time_ns() // 1000
 
-    with open(csv_file_path, "r") as csv_file:
-        csv_reader = csv.DictReader(csv_file)
-        for row in csv_reader:
-            timestamp = int(row['timestamp'])
-            if timestamp >= market_target_timestamp:
-                coin_price = float(row['price'])
-                print("Price at timestamp {}: {}".format(market_target_timestamp, coin_price))
-                break
-        else:
-            print("Timestamp {} not found in the CSV file.".format(market_target_timestamp))
-
-    # end_time = time.time() * 1000
+    order_books = market[cointype][exchange]
+    res_order_book = {}
+    
+    if market_target_timestamp < order_books[0]['timestamp']:
+        print("Cannot find order book that matches the timestamp, timestamp too small")
+        response = jsonify(success='False', message='timestamp too small', order_book={})
+        return response
+    if market_target_timestamp > order_books[-1]['timestamp']:
+        print("Cannot find order book that matches the timestamp, timestamp too large")
+        response = jsonify(success='False', message='timestamp too large', order_book={})
+        return response
+    
+    for order_book in order_books:
+        timestamp = int(order_book['timestamp'])
+        if timestamp > market_target_timestamp:
+            break
+        res_order_book = order_book
+    
     end_time_micro = time.time_ns() // 1000
 
     # Calculate the elapsed time
     time_to_retrieve_price = end_time_micro - start_time_micro
     print("time to retrieve price:", time_to_retrieve_price, "microseconds")
 
-    response = jsonify(success='True', coin_price=coin_price)
-    return response
+    if res_order_book == {}:
+        print("Cannot find order book that matches the timestamp")
+        response = jsonify(success='False', message='No match timestamp', order_book=res_order_book)
+        return response
+    else:
+        print("Order book at timestamp {}: ".format(market_target_timestamp))
+        print(res_order_book)
+        response = jsonify(success='True', message='Congrats', order_book=res_order_book)
+        return response
