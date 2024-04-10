@@ -21,6 +21,7 @@ exchange_name_list = ["mexc", "okx", "kraken", "gateio", "binance", "bingx", "cr
 
 def getMarket():
     market = {}
+    max_start_timestamp = 0
     for cointype in ["doge", "shib"]:
         coin_market = {}
         for exchange in exchange_name_list:
@@ -33,6 +34,11 @@ def getMarket():
             order_books = []
             with open(pickle_file_path, "rb") as f:
                 try:
+                    order_book = pickle.load(f)
+                    curr_timestamp = order_book['timestamp']
+                    if curr_timestamp > max_start_timestamp:
+                        max_start_timestamp = curr_timestamp
+                    order_books.append(order_book)
                     while True:
                         order_book = pickle.load(f)
                         order_books.append(order_book)
@@ -40,14 +46,14 @@ def getMarket():
                     pass  # Reached end of file
             coin_market[exchange] = order_books
         market[cointype] = coin_market
-    return market
+    return market, max_start_timestamp
 
-def getMarketStartTime(market):
-    return market['shib']['bitget'][0]['timestamp']
+# def getMarketStartTime(market):
+#     return market['shib']['bitget'][0]['timestamp']
 
 
-market = getMarket()
-market_start_timestamp = getMarketStartTime(market)
+market, market_start_timestamp = getMarket()
+# market_start_timestamp = getMarketStartTime(market)
 print("market start timestamp: ", market_start_timestamp)
 real_start_timestamp = round(time.time() * 1000)
 print("real start timestamp: ", real_start_timestamp)

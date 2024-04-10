@@ -91,7 +91,7 @@ market_list = [
 ]
 
 
-def get_estimate_ratio(latency: float, sigma: float, confidence_level:int = 99, risk_free_rate: float = 0):
+def get_estimate_ratio(latency: float, sigma: float, confidence_level:int, risk_free_rate: float = 0):
     '''
     Return the lowest estimate ratio given a confidence_interval 
     latency: estimated time interval, in second
@@ -159,6 +159,8 @@ def get_shib_volatilities():
 
 
 if __name__ == "__main__":
-    print(get_estimate_ratio(latency = 2400, sigma = 0.0014224225155174714, confidence_level = 90))
+    doge_volatilities = get_doge_volatilities()
+    print(get_estimate_ratio(latency = 2400, sigma = doge_volatilities['binance'], confidence_level = 50))
+    print(get_estimate_ratio(latency = 840, sigma = doge_volatilities['binance'], confidence_level = 50))
     # for market in market_list:
     #     get_volatility(f"../../Dataset/ohlcvs/doge_data/{market['name']}_doge_transaction.csv")

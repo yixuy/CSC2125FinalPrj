@@ -2,6 +2,7 @@ import requests
 import threading
 import time
 import utils
+import csv
 
 doge_fund_lock = threading.Lock()
 shib_fund_lock = threading.Lock()
@@ -31,6 +32,9 @@ future_shib_bids = {'mexc': [], 'okx': [], 'kraken': [], 'gateio': [], 'binance'
 
 doge_volatilities = {}
 shib_volatilities = {}
+
+doge_arbitrages = []
+shib_arbitrages = []
 
 def update_exchange(cointype, exchange, frequency):
     """
@@ -78,14 +82,16 @@ def update_exchange(cointype, exchange, frequency):
         if cointype == 'doge':
             real_time_doge_asks[exchange] = res_current_json['order_book']['asks']
             real_time_doge_bids[exchange] = res_current_json['order_book']['bids']
-            # todo: calculate future_doge_sell_prices[exchange]
-            # max_bid_price = res_current_json['order_book']['bids'][0][0]
-            # future_doge_sell_prices[exchange] = estimationFunc(max_bid_price, arg1, arg2, ...)
+            max_bid_price = res_current_json['order_book']['bids'][0][0]
+            # min_ask_price = res_current_json['order_book']['asks'][0][0]
+            future_doge_sell_prices[exchange] = max_bid_price * utils.get_estimate_ratio(latency=2400, sigma=doge_volatilities[exchange], confidence_level=55)
             future_doge_bids[exchange] = res_future_json['order_book']['bids']
         elif cointype == 'shib':
             real_time_shib_asks[exchange] = res_current_json['order_book']['asks']
             real_time_shib_bids[exchange] = res_current_json['order_book']['bids']
-            # todo: future_shib_sell_prices[exchange] = 
+            max_bid_price = res_current_json['order_book']['bids'][0][0]
+            # min_ask_price = res_current_json['order_book']['asks'][0][0]
+            future_shib_sell_prices[exchange] = max_bid_price * utils.get_estimate_ratio(latency=840, sigma=shib_volatilities[exchange], confidence_level=55)
             future_shib_bids[exchange] = res_future_json['order_book']['bids']
 
         time.sleep(frequency)
@@ -95,6 +101,7 @@ def buy_sell():
     time.sleep(2)
     global real_time_doge_asks, real_time_shib_asks
     global fund_doge, fund_shib
+    global doge_arbitrages, shib_arbitrages
     
     real_time_doge_low_asks = {}
     real_time_shib_low_asks = {}
@@ -125,10 +132,8 @@ def buy_sell():
                 buy_exchange_shib = exchange
         real_time_shib_buys = real_time_shib_asks[buy_exchange_doge]
 
-        sell_exchange_doge = max(future_doge_sell_prices.items(), key=lambda x: x[1])
-        expect_sell_price_doge = sell_exchange_doge * utils.get_estimate_ratio(latency = 2400, sigma = doge_volatilities[sell_exchange_doge])
-        sell_exchange_shib = max(future_shib_sell_prices.items(), key=lambda x: x[1])
-        expect_sell_price_shib = sell_exchange_shib * utils.get_estimate_ratio(latency = 2400, sigma = shib_volatilities[sell_exchange_shib])
+        sell_exchange_doge, expect_sell_price_doge = max(future_doge_sell_prices.items(), key=lambda x: x[1])
+        sell_exchange_shib, expect_sell_price_shib = max(future_shib_sell_prices.items(), key=lambda x: x[1])
         future_doge_sells = future_doge_bids[sell_exchange_doge]
         future_shib_sells = future_shib_bids[sell_exchange_shib]
 
@@ -140,10 +145,11 @@ def buy_sell():
         if expect_sell_price_doge > buy_price_doge:
             print(f"Buying DOGE from {buy_exchange_doge} at price starting of ${buy_price_doge} and selling to {sell_exchange_doge},")
             print(f"Expecting at sell price of {expect_sell_price_doge} ")
-            bought_amount = 0
             with doge_fund_lock:
+                bought_amount = 0
+                fund_doge_before_trade = fund_doge
                 for ask in real_time_doge_buys[:10]:
-                    if ask[0] > expect_sell_price_doge:
+                    if ask[0] >= expect_sell_price_doge:
                         break
                     if ask[0] * ask[1] > fund_doge:
                         bought_amount += fund_doge / ask[0]
@@ -151,6 +157,7 @@ def buy_sell():
                         break
                     bought_amount += ask[1]
                     fund_doge -= ask[0] * ask[1]
+                volume = bought_amount
                 for bid in future_doge_sells:
                     if bid[1] > bought_amount:
                         fund_doge += bid[0] * bought_amount
@@ -158,12 +165,16 @@ def buy_sell():
                         break
                     fund_doge += bid[0] * bid[1]
                     bought_amount -= bid[1]
+                profit = fund_doge - fund_doge_before_trade
+                arbitrage = [buy_exchange_doge, sell_exchange_doge, volume, profit, time.time() - start_time]
+                doge_arbitrages.append(arbitrage)
                     
         elif expect_sell_price_shib > buy_price_shib:
             print(f"Buying SHIB from {buy_exchange_shib} at price strating of ${buy_price_shib} and selling to {sell_exchange_shib},")
             print(f"Expecting at sell price of {expect_sell_price_shib} ")
-            bought_amount = 0
             with shib_fund_lock:
+                bought_amount = 0
+                fund_shib_before_trade = fund_shib
                 for ask in real_time_shib_buys[:10]:
                     if ask[0] > expect_sell_price_shib:
                         break
@@ -173,6 +184,7 @@ def buy_sell():
                         break
                     bought_amount += ask[1]
                     fund_shib -= ask[0] * ask[1]
+                volume = bought_amount
                 for bid in future_shib_sells:
                     if bid[1] > bought_amount:
                         fund_shib += bid[0] * bought_amount
@@ -180,6 +192,10 @@ def buy_sell():
                         break
                     fund_shib += bid[0] * bid[1]
                     bought_amount -= bid[1]
+                profit = fund_shib - fund_shib_before_trade
+                arbitrage = [buy_exchange_shib, sell_exchange_shib, volume, profit, time.time() - start_time]
+                shib_arbitrages.append(arbitrage)
+
         else:
             print("No arbitrage opportunity available.")
         
@@ -209,11 +225,24 @@ def simulation(initial_fund):
         thread.join()
     buy_sell_thread.join()
 
+    header = ['buy_exchange', 'sell_exchange', 'volume', 'profit', 'time']
+    save_file_doge = f"../records/arbitrage_doge_records.csv"
+    with open(save_file_doge, 'w', newline='') as output_file:
+        writer = csv.writer(output_file)
+        writer.writerow(header)
+        writer.writerows(doge_arbitrages)
+    save_file_shib = f"../records/arbitrage_shib_records.csv"
+    with open(save_file_shib, 'w', newline='') as output_file:
+        writer = csv.writer(output_file)
+        writer.writerow(header)
+        writer.writerows(shib_arbitrages)
+
 
 if __name__ == "__main__":
     # Prepare volatilities
     doge_volatilities = utils.get_doge_volatilities()
     shib_volatilities = utils.get_shib_volatilities()
+    start_time = time.time()
     simulation(20000)
     
 
