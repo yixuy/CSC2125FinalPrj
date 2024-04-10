@@ -84,14 +84,14 @@ def update_exchange(cointype, exchange, frequency):
             real_time_doge_bids[exchange] = res_current_json['order_book']['bids']
             max_bid_price = res_current_json['order_book']['bids'][0][0]
             # min_ask_price = res_current_json['order_book']['asks'][0][0]
-            future_doge_sell_prices[exchange] = max_bid_price * utils.get_estimate_ratio(latency=2400, sigma=doge_volatilities[exchange], confidence_level=55)
+            future_doge_sell_prices[exchange] = max_bid_price * utils.get_estimate_ratio(latency=2400, sigma=doge_volatilities[exchange], confidence_level=51)
             future_doge_bids[exchange] = res_future_json['order_book']['bids']
         elif cointype == 'shib':
             real_time_shib_asks[exchange] = res_current_json['order_book']['asks']
             real_time_shib_bids[exchange] = res_current_json['order_book']['bids']
             max_bid_price = res_current_json['order_book']['bids'][0][0]
             # min_ask_price = res_current_json['order_book']['asks'][0][0]
-            future_shib_sell_prices[exchange] = max_bid_price * utils.get_estimate_ratio(latency=840, sigma=shib_volatilities[exchange], confidence_level=55)
+            future_shib_sell_prices[exchange] = max_bid_price * utils.get_estimate_ratio(latency=840, sigma=shib_volatilities[exchange], confidence_level=56)
             future_shib_bids[exchange] = res_future_json['order_book']['bids']
 
         time.sleep(frequency)
@@ -114,18 +114,19 @@ def buy_sell():
         buy_price_doge = float('inf')
         # print("real_time_doge_asks: ", real_time_doge_asks)
         for exchange, asks in real_time_doge_asks.items():
-            min_ask_price = min(asks, key=lambda x: x[0])[0]
+            # min_ask_price = min(asks, key=lambda x: x[0])[0]
+            min_ask_price = asks[0][0]
             real_time_doge_low_asks[exchange] = min_ask_price ####
             if min_ask_price < buy_price_doge:
                 buy_price_doge = min_ask_price
                 buy_exchange_doge = exchange
         real_time_doge_buys = real_time_doge_asks[buy_exchange_doge]
         
-
         buy_exchange_shib = None
         buy_price_shib = float('inf')
         for exchange, asks in real_time_shib_asks.items():
-            min_ask_price = min(asks, key=lambda x: x[0])[0]
+            # min_ask_price = min(asks, key=lambda x: x[0])[0]
+            min_ask_price = asks[0][0]
             real_time_shib_low_asks[exchange] = min_ask_price ####
             if min_ask_price < buy_price_shib:
                 buy_price_shib = min_ask_price
@@ -166,17 +167,19 @@ def buy_sell():
                     fund_doge += bid[0] * bid[1]
                     bought_amount -= bid[1]
                 profit = fund_doge - fund_doge_before_trade
-                arbitrage = [buy_exchange_doge, sell_exchange_doge, volume, profit, time.time() - start_time]
+                arbitrage = [buy_exchange_doge, sell_exchange_doge, volume, profit, fund_doge, time.time() - start_time]
                 doge_arbitrages.append(arbitrage)
+        else:
+            print("No DOGE arbitrage opportunity available.")
                     
-        elif expect_sell_price_shib > buy_price_shib:
+        if expect_sell_price_shib > buy_price_shib:
             print(f"Buying SHIB from {buy_exchange_shib} at price strating of ${buy_price_shib} and selling to {sell_exchange_shib},")
             print(f"Expecting at sell price of {expect_sell_price_shib} ")
             with shib_fund_lock:
                 bought_amount = 0
                 fund_shib_before_trade = fund_shib
                 for ask in real_time_shib_buys[:10]:
-                    if ask[0] > expect_sell_price_shib:
+                    if ask[0] >= expect_sell_price_shib:
                         break
                     if ask[0] * ask[1] > fund_shib:
                         bought_amount += fund_shib / ask[0]
@@ -193,11 +196,10 @@ def buy_sell():
                     fund_shib += bid[0] * bid[1]
                     bought_amount -= bid[1]
                 profit = fund_shib - fund_shib_before_trade
-                arbitrage = [buy_exchange_shib, sell_exchange_shib, volume, profit, time.time() - start_time]
+                arbitrage = [buy_exchange_shib, sell_exchange_shib, volume, profit, fund_shib, time.time() - start_time]
                 shib_arbitrages.append(arbitrage)
-
         else:
-            print("No arbitrage opportunity available.")
+            print("No SHIB arbitrage opportunity available.")
         
         print("Remaining DOGE fund:", fund_doge)
         print("Remaining SHIB fund:", fund_shib)
@@ -225,7 +227,7 @@ def simulation(initial_fund):
         thread.join()
     buy_sell_thread.join()
 
-    header = ['buy_exchange', 'sell_exchange', 'volume', 'profit', 'time']
+    header = ['buy_exchange', 'sell_exchange', 'volume', 'profit', 'fund_remain' 'time']
     save_file_doge = f"../records/arbitrage_doge_records.csv"
     with open(save_file_doge, 'w', newline='') as output_file:
         writer = csv.writer(output_file)
