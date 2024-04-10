@@ -130,7 +130,7 @@ def buy_sell():
             if min_ask_price < buy_price_shib:
                 buy_price_shib = min_ask_price
                 buy_exchange_shib = exchange
-        real_time_shib_buys = real_time_shib_asks[buy_exchange_doge]
+        real_time_shib_buys = real_time_shib_asks[buy_exchange_shib]
 
         sell_exchange_doge, expect_sell_price_doge = max(future_doge_sell_prices.items(), key=lambda x: x[1])
         sell_exchange_shib, expect_sell_price_shib = max(future_shib_sell_prices.items(), key=lambda x: x[1])
