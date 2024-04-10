@@ -126,9 +126,9 @@ def buy_sell():
         real_time_shib_buys = real_time_shib_asks[buy_exchange_doge]
 
         sell_exchange_doge = max(future_doge_sell_prices.items(), key=lambda x: x[1])
-        expect_sell_price_doge = sell_exchange_doge * utils.get_estimate_ratio(latency = 2400, sigma = doge_volatilities[buy_exchange_doge])
+        expect_sell_price_doge = sell_exchange_doge * utils.get_estimate_ratio(latency = 2400, sigma = doge_volatilities[sell_exchange_doge])
         sell_exchange_shib = max(future_shib_sell_prices.items(), key=lambda x: x[1])
-        expect_sell_price_shib = sell_exchange_shib * utils.get_estimate_ratio(latency = 2400, sigma = shib_volatilities[buy_exchange_doge])
+        expect_sell_price_shib = sell_exchange_shib * utils.get_estimate_ratio(latency = 2400, sigma = shib_volatilities[sell_exchange_shib])
         future_doge_sells = future_doge_bids[sell_exchange_doge]
         future_shib_sells = future_shib_bids[sell_exchange_shib]
 
