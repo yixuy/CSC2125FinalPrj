@@ -9,14 +9,16 @@ We will study the price expectation of each exchange based on their past transac
 
 We will try to start with cryptocurrencies of medium market cap including Dogecoin, Shiba Inu…
 
-Google Doc link: https://docs.google.com/document/d/1MIFtHyvE4Qb7iO7dMlvubtsNCXxcCDtgrwsV9sn01Uk/edit
-Google Sheets link: https://docs.google.com/spreadsheets/d/1vp_-G1hRQcD1IdCpPBNsdEQ9aKRx4G1DtvEghktitBY/edit#gid=0
-
 
 Pre Package install:
-```pip install ccxt```
-```pip install pyxt```
-```pip install Falsk```
+```pip install -r requirements.txt```
 
-Run the simulator:
-```python Simulator/run.py```
+Run the market simulator:
+```cd Simulator```
+```python run.py```
+
+Market simulator may take a few seconds to load all the data. Run trade simulator after the market simulator starts
+
+Run the trade simulator:
+```cd Trade/app ```
+```python decision.py ```
